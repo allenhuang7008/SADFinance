@@ -1,7 +1,6 @@
 import optuna
 import optuna.visualization as vis
 from train import train_model
-import matplotlib.pyplot as plt
 
 def objective(trial, norm_train, norm_val):
     params = {
@@ -34,8 +33,8 @@ def tune_model(norm_train, norm_val):
     slice = vis.plot_slice(study, params=['n_layers', 'n_nodes', 'dropout_rate', 'lr']).show()
 
     # save plots in results folder
-    plt.savefig('../../results/optimization_history.png')
-    plt.savefig('../../results/param_importance.png')
-    plt.savefig('../../results/param_slice.png')
+    history.savefig('../../results/optimization_history.png')
+    importance.savefig('../../results/param_importance.png')
+    slice.savefig('../../results/param_slice.png')
 
     return best_params, best_val_loss

@@ -23,7 +23,7 @@ def main():
     # tune model
     best_params, val_loss = tune_model(norm_train, norm_val)
     print(f'best hyperparameters: {best_params}\nval RMSE: {np.sqrt(val_loss)}')
-    with open('best_params.json', 'w') as f:
+    with open('../../results/best_params.json', 'w') as f:
         json.dump(best_params, f)
 
     # train model with best params
