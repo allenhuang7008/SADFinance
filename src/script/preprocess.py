@@ -32,6 +32,18 @@ def pre_stock(path, show_plot=False):
 
     return daily
 
+def pre_sentiment(path):
+    '''
+    This constructs the daily sentiment dataframe: {Date, [Scores]}
+    '''
+    df = pd.read_csv(path, header=0)
+    df.drop(df.columns[0], axis=1, inplace=True)
+    df['Date'] = df['Date'].apply(lambda x: datetime.strptime(x, '%Y-%m-%d').date())
+    score = df.groupby('Date').mean()
+    score.reset_index(inplace=True)
+
+    return score
+
 def time_series_split(data, val_size=0.2, test_size=0.2):
     '''
     data: input can be a numpy array or pandas Series
@@ -63,17 +75,21 @@ def normalize(train, *arg):
     return scaler, norm_train, norm_arg
 
 
-def create_dataset(data, lookback):
+def create_dataset(data, lookback, trend=False):
     '''
     This function creates a dataset for time series forecasting, with a rolling window of lookback. 
     The setup of labels depends on the purpose of the model. It can be a period in the future or a single day in the future
+    trend: if True, y label becomes boolean, indicating whether the price goes up (1) or down (0)
     '''
     n_data, n_feat = data.shape
     X = np.empty((n_data-lookback, lookback, n_feat))
     y = np.empty((n_data-lookback, lookback, n_feat))
     for i in range(n_data-lookback):
         feature = data[i:i+lookback]
-        target = data[i+1:i+lookback+1]
+        if trend:
+            target = (data[i+lookback:i+lookback+1] > data[i+lookback-1:i+lookback]).astype(int)
+        else:
+            target = data[i+1:i+lookback+1]
         X[i] = feature
         y[i] = target
     return torch.tensor(X), torch.tensor(y)

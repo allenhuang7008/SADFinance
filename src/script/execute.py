@@ -10,9 +10,10 @@ from sklearn.metrics import mean_squared_error
 import torch
 
 def main():
-    # retreive stock data
-    path = '../../data/stock_data_sp500_2016_2018.parquet'
-    daily = pre_stock(path, show_plot=False)
+    # retreive data
+    stock_path = '../../data/stock_data_sp500_2016_2018.parquet'
+    daily = pre_stock(stock_path, show_plot=False)
+
 
     # split data
     train, val, test = time_series_split(daily.price.values, val_size=0.2, test_size=0.2)
