@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-from preprocess import pre_stock, time_series_split, normalize, create_dataset
+from preprocess import pre_stock, pre_sentiment, time_series_split, normalize, create_dataset
 from LSTM import LSTMModel
 from train import train_model
 from tuning import tune_model
@@ -14,12 +14,17 @@ def main():
     stock_path = '../../data/stock_data_sp500_2016_2018.parquet'
     daily = pre_stock(stock_path, show_plot=False)
 
+    sentiment_path = '../../data/doc_score_full.csv'
+    score = pre_sentiment(sentiment_path)
+
+    # merge data
+    daily = daily.merge(score, on='Date', how='left').set_index('Date').to_numpy()
 
     # split data
-    train, val, test = time_series_split(daily.price.values, val_size=0.2, test_size=0.2)
+    train, val, test = time_series_split(daily, val_size=0.2, test_size=0.2)
 
     # normalize data
-    scaler, norm_train, (norm_val, norm_test) = normalize(train, val, test)
+    scaler, price_scaler, norm_train, (norm_val, norm_test) = normalize(train, val, test)
 
     # tune model
     best_params, val_loss = tune_model(norm_train, norm_val)
@@ -37,32 +42,32 @@ def main():
     n_nodes = best_params['n_nodes']
     n_layers = best_params['n_layers']
     dropout_rate = best_params['dropout_rate']
-    model = LSTMModel(input_dim=1, n_nodes=n_nodes, output_dim=1, n_layers=n_layers, dropout_rate=dropout_rate)
-    model.double()
 
-    train = create_dataset(norm_train, lookback=lookback)[0]
+    X_train = create_dataset(norm_train, lookback=lookback)[0]
     temp_val = create_dataset(scaler.transform(np.concatenate((train[-lookback:], val))), lookback)[0]
     temp_test, test_label = create_dataset(scaler.transform(np.concatenate((val[-lookback:], test))), lookback)
+    price = daily[:, 0]
+    model = LSTMModel(input_dim=10, n_nodes=n_nodes, output_dim=1, n_layers=n_layers, dropout_rate=dropout_rate)
+    model.double()
     model.load_state_dict(opt_model_state) # load the optimal model state
-    price = daily.price.values
     model.eval()
 
     with torch.no_grad():
-        y_pred = model(train)
+        y_pred = model(X_train)
         y_pred = y_pred[:, -1, 0].view(-1, 1)  # select the 1-D output and reshape from (batch_size, sequence_length) to (batch_size*sequence_length, 1)
-        y_pred = scaler.inverse_transform(y_pred)
+        y_pred = price_scaler.inverse_transform(y_pred)
         train_plot = np.empty_like(price) * np.nan
         train_plot[lookback:len(y_pred)+lookback] = y_pred.flatten()
 
         val_pred = model(temp_val)
         val_pred = val_pred[:, -1, 0].view(-1, 1)  # select the 1-D output and reshape from (batch_size, sequence_length) to (batch_size*sequence_length, 1)
-        val_pred = scaler.inverse_transform(val_pred)
+        val_pred = price_scaler.inverse_transform(val_pred)
         val_plot = np.empty_like(price) * np.nan
         val_plot[len(y_pred)+lookback:len(y_pred)+len(val_pred)+lookback] = val_pred.flatten()
         
         t_pred = model(temp_test)
         t_pred = t_pred[:, -1, 0].view(-1, 1)  # select the 1-D output and reshape from (batch_size, sequence_length) to (batch_size*sequence_length, 1)
-        t_pred = scaler.inverse_transform(t_pred)
+        t_pred = price_scaler.inverse_transform(t_pred)
         t_plot = np.empty_like(price) * np.nan
         t_plot[len(y_pred)+len(val_pred)+lookback:] = t_pred.flatten()
 

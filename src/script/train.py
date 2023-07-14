@@ -14,7 +14,7 @@ from preprocess import create_dataset
 from LSTM import LSTMModel
 import copy
 
-def train_model(params, norm_train, norm_val, n_epochs=2000):
+def train_model(params, norm_train, norm_val, n_epochs=1000):
     # set hyperparameters
     lookback = params['lookback']
     lr = params['lr']
@@ -26,13 +26,14 @@ def train_model(params, norm_train, norm_val, n_epochs=2000):
     X_train, y_train = create_dataset(norm_train, lookback=lookback)
     X_val, y_val = create_dataset(norm_val, lookback=lookback)
     print(f'X_train shape, y_train shape: {X_train.shape}, {y_train.shape}')
+    input_dim = X_train.shape[2]
 
     # create dataloader
     batch_size = 10
     loader = data.DataLoader(data.TensorDataset(X_train, y_train), shuffle=True, batch_size=10)
     
     # setup model
-    model = LSTMModel(input_dim=1, n_nodes=n_nodes, output_dim=1, n_layers=n_layers, dropout_rate=dropout_rate)
+    model = LSTMModel(input_dim=input_dim, n_nodes=n_nodes, output_dim=1, n_layers=n_layers, dropout_rate=dropout_rate)
     model.double()
     optimizer = opt.Adam(model.parameters(), lr=lr)
     loss_fn = nn.MSELoss()
