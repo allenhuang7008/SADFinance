@@ -2,7 +2,7 @@ import optuna
 import optuna.visualization as vis
 from train import train_model
 
-def objective(trial, norm_train, norm_val):
+def objective(trial, norm_train, norm_val, trend):
     params = {
         'lookback' : trial.suggest_int("lookback", 5, 30, step=5),
         'lr' : trial.suggest_float("lr", 1e-5, 1e-1, log=True),
@@ -11,13 +11,13 @@ def objective(trial, norm_train, norm_val):
         'dropout_rate' : trial.suggest_float("dropout_rate", 0.2, 0.5)
     }
 
-    val_loss, _ = train_model(params, norm_train, norm_val, n_epochs=10) # here we don't need the optimal state
+    val_loss, _ = train_model(params, norm_train, norm_val, n_epochs=10, trend=trend) # here we don't need the optimal state
 
     return val_loss
 
-def tune_model(norm_train, norm_val):
+def tune_model(norm_train, norm_val, trend=False):
     study = optuna.create_study(direction="minimize")
-    study.optimize(lambda trial: objective(trial, norm_train, norm_val), n_trials=2)
+    study.optimize(lambda trial: objective(trial, norm_train, norm_val, trend=trend), n_trials=2)
 
     best_trial = study.best_trial
     best_params = best_trial.params

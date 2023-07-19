@@ -99,5 +99,5 @@ def create_dataset(data, lookback, trend=False):
             target = data[i+1:i+lookback+1, 0].reshape(-1,1)
         X[i] = feature
         y[i] = target
-    return torch.tensor(X), torch.tensor(y), trend
+    return torch.tensor(X), torch.tensor(y)
 

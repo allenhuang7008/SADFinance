@@ -14,7 +14,7 @@ from preprocess import create_dataset
 from LSTM import LSTMModel
 import copy
 
-def train_model(params, norm_train, norm_val, n_epochs=1000):
+def train_model(params, norm_train, norm_val, n_epochs=1000, trend=False):
     # set hyperparameters
     lookback = params['lookback']
     lr = params['lr']
@@ -23,8 +23,8 @@ def train_model(params, norm_train, norm_val, n_epochs=1000):
     dropout_rate = params['dropout_rate'] #usually between 0.2 and 0.5
     
     # create dataset
-    X_train, y_train, trend_train = create_dataset(norm_train, lookback=lookback)
-    X_val, y_val, trend_val = create_dataset(norm_val, lookback=lookback)
+    X_train, y_train= create_dataset(norm_train, lookback=lookback, trend=trend)
+    X_val, y_val= create_dataset(norm_val, lookback=lookback, trend=trend)
     print(f'X_train shape, y_train shape: {X_train.shape}, {y_train.shape}')
     input_dim = X_train.shape[2]
 
@@ -71,7 +71,7 @@ def train_model(params, norm_train, norm_val, n_epochs=1000):
 
         # If the minimum val loss has not been updated for 2 consecutive epochs, stop training
         if counter == 2:
-            print('Early stopping at epoch {t}')
+            print(f'Early stopping at epoch {t}')
             break
             #print("Epoch %d: train RMSE %.4f, val RMSE %.4f" % (t, np.sqrt(loss.item()), np.sqrt(val_loss)))
     return min_val_loss, opt_model_state
