@@ -14,7 +14,7 @@ from preprocess import create_dataset
 from LSTM import LSTMModel
 import copy
 
-def train_model(params, norm_train, norm_val, trend, n_epochs=1000):
+def train_model(params, norm_train, norm_val, trend, n_epochs=2000):
     # set hyperparameters
     lookback = params['lookback']
     lr = params['lr']
@@ -30,7 +30,7 @@ def train_model(params, norm_train, norm_val, trend, n_epochs=1000):
 
     # create dataloader
     batch_size = 10
-    loader = data.DataLoader(data.TensorDataset(X_train, y_train), shuffle=True, batch_size=10)
+    loader = data.DataLoader(data.TensorDataset(X_train, y_train), shuffle=True, batch_size=batch_size)
     
     # setup model
     model = LSTMModel(input_dim=input_dim, n_nodes=n_nodes, output_dim=1, n_layers=n_layers, dropout_rate=dropout_rate)

@@ -11,16 +11,19 @@ import torch
 from sklearn.metrics import roc_curve, auc
 import sys
 
-def main(trend):
+def main(trend, baseline=False):
     # retreive data
     stock_path = '../../data/stock_data_sp500_2016_2018.parquet'
     daily = pre_stock(stock_path, show_plot=False)
+    
+    if not baseline:
+        sentiment_path = '../../data/doc_score_full.csv'
+        score = pre_sentiment(sentiment_path)
 
-    sentiment_path = '../../data/doc_score_full.csv'
-    score = pre_sentiment(sentiment_path)
-
-    # merge data
-    daily = daily.merge(score, on='Date', how='left').set_index('Date').to_numpy()
+        # merge data
+        daily = daily.merge(score, on='Date', how='left').set_index('Date').to_numpy()
+    else:
+        daily = daily.set_index('Date').to_numpy()
 
     # split data
     train, val, test = time_series_split(daily, val_size=0.2, test_size=0.2)
@@ -31,8 +34,12 @@ def main(trend):
     # tune model
     best_params, val_loss = tune_model(norm_train, norm_val, trend=trend)
     print(f'best hyperparameters: {best_params}\nval RMSE: {np.sqrt(val_loss)}')
-    with open('../../results/best_params.json', 'w') as f:
-        json.dump(best_params, f)
+    if baseline:
+        with open('../../results/best_params_baseline.json', 'w') as f:
+            json.dump(best_params, f)
+    else:
+        with open('../../results/best_params_sentiment.json', 'w') as f:
+            json.dump(best_params, f)
 
     # train model with best params
     full_train = np.concatenate((norm_train, norm_val))
@@ -47,10 +54,11 @@ def main(trend):
     dropout_rate = best_params['dropout_rate']
 
     X_train = create_dataset(norm_train, lookback=lookback, trend=trend)[0]
+    input_dim = X_train.shape[2]
     temp_val = create_dataset(scaler.transform(np.concatenate((train[-lookback:], val))), lookback, trend=trend)[0]
     temp_test, test_label = create_dataset(scaler.transform(np.concatenate((val[-lookback:], test))), lookback, trend=trend)
     price = daily[:, 0]
-    model = LSTMModel(input_dim=10, n_nodes=n_nodes, output_dim=1, n_layers=n_layers, dropout_rate=dropout_rate)
+    model = LSTMModel(input_dim=input_dim, n_nodes=n_nodes, output_dim=1, n_layers=n_layers, dropout_rate=dropout_rate)
     model.double()
     model.load_state_dict(opt_model_state) # load the optimal model state
     model.eval()
@@ -80,12 +88,14 @@ def main(trend):
             plt.plot(train_plot, c='r')
             plt.plot(val_plot, c='g')
             plt.plot(t_plot, c='orange')
+            plt.savefig('../../results/full_price_pred.png')
             plt.show()
 
             t_loss = np.sqrt(mean_squared_error(t_pred, test_label[:,0,0].view(-1, 1)))
             print(f'test RMSE: {t_loss}')
             plt.plot(price[len(y_pred)+len(val_pred)+lookback:], c='b')
             plt.plot(t_plot[len(y_pred)+len(val_pred)+lookback:], c='orange')
+            plt.savefig('../../results/test_price_pred.png')
             plt.show()
 
         else:
@@ -105,10 +115,14 @@ def main(trend):
             plt.ylabel('True Positive Rate')
             plt.title('Receiver Operating Characteristic')
             plt.legend(loc="lower right")
+            if baseline:
+                plt.savefig('../../results/roc_baseline.png')
+            else:
+                plt.savefig('../../results/roc_sentiment.png')
             plt.show()
 
 if __name__ == '__main__':
     if sys.argv[1].lower() not in ['true', 'false']:
         raise ValueError('Invalid input: please use True or False')
     trend = sys.argv[1].lower() == 'true'
-    main(trend)
+    main(trend, baseline=True)
