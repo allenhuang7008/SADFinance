@@ -7,17 +7,30 @@ def objective(trial, norm_train, norm_val, trend):
         'lookback' : trial.suggest_int("lookback", 5, 60, step=5),
         'lr' : trial.suggest_float("lr", 1e-5, 1e-1, log=True),
         'n_nodes' : trial.suggest_int("n_nodes", 10, 200, step=10),
-        'n_layers' : trial.suggest_int("n_layers", 1, 100),
+        'n_layers' : trial.suggest_int("n_layers", 1, 5),
         'dropout_rate' : trial.suggest_float("dropout_rate", 0.2, 0.5)
     }
 
-    val_loss, _ = train_model(params, norm_train, norm_val, trend=trend, n_epochs=100) # here we don't need the optimal state
+    val_loss, _ = train_model(params, norm_train, norm_val, trend=trend, n_epochs=500) # here we don't need the optimal state
 
     return val_loss
 
+def study_early_stop(study, trial):
+    # Stop if no improvement in the last N trials
+    N = 30
+    threshold = 0.001
+
+    if len(study.trials) < N:
+        return
+
+    best_value = study.best_value
+    values = [t.value for t in study.trials[-N:]]
+    if all((abs(v - best_value) < threshold) or (v > best_value) for v in values):
+        study.stop()
+
 def tune_model(norm_train, norm_val, trend, baseline=False):
     study = optuna.create_study(direction="minimize")
-    study.optimize(lambda trial: objective(trial, norm_train, norm_val, trend=trend), n_trials=1000)
+    study.optimize(lambda trial: objective(trial, norm_train, norm_val, trend=trend), n_trials=200, callbacks=[study_early_stop])
 
     best_trial = study.best_trial
     best_params = best_trial.params

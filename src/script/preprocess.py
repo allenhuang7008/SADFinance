@@ -89,14 +89,20 @@ def create_dataset(data, lookback, trend=False):
     Note that the first column need to be the daily market price
     '''
     n_data, n_feat = data.shape
-    X = np.empty((n_data-lookback, lookback, n_feat))
-    y = np.empty((n_data-lookback, lookback, 1))
-    for i in range(n_data-lookback):
+    if trend:
+        loop = n_data - lookback - 1
+        X = np.empty((loop, lookback, n_feat))
+        y = np.empty((loop, lookback, 1))
+        price_trend = (data[1:, 0] > data[:-1, 0]).astype(int)
+        data = data[1:]
+        data[:, 0] = price_trend
+    else:
+        loop = n_data - lookback
+        X = np.empty((n_data-lookback, lookback, n_feat))
+        y = np.empty((n_data-lookback, lookback, 1))
+    for i in range(loop):
         feature = data[i:i+lookback]
-        if trend:
-            target = (data[i+lookback:i+lookback+1, 0] > data[i+lookback-1:i+lookback, 0]).astype(int)
-        else:
-            target = data[i+1:i+lookback+1, 0].reshape(-1,1)
+        target = data[i+1:i+lookback+1, 0].reshape(-1,1)
         X[i] = feature
         y[i] = target
     return torch.tensor(X), torch.tensor(y)

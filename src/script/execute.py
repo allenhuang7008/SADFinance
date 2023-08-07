@@ -33,7 +33,7 @@ def main(trend, baseline=False):
 
     # tune model
     best_params, val_loss = tune_model(norm_train, norm_val, trend=trend)
-    print(f'best hyperparameters: {best_params}\nval RMSE: {np.sqrt(val_loss)}')
+    print(f'best hyperparameters: {best_params}\nval loss: {np.sqrt(val_loss)}')
     if baseline:
         with open('../../results/best_params_baseline.json', 'w') as f:
             json.dump(best_params, f)
@@ -44,7 +44,7 @@ def main(trend, baseline=False):
     # train model with best params
     full_train = np.concatenate((norm_train, norm_val))
     min_test_loss, opt_model_state = train_model(best_params, full_train, norm_test, trend=trend)
-    print(f'minimum test RMSE: {min_test_loss}')
+    print(f'minimum test BCElogistic: {min_test_loss}')
 
     # evaluate with test set and plot results
     lookback = best_params['lookback']
@@ -76,13 +76,13 @@ def main(trend, baseline=False):
         val_plot = np.empty_like(price) * np.nan
         val_plot[len(y_pred)+lookback:len(y_pred)+len(val_pred)+lookback] = val_pred.flatten()
         
-        t_pred = model(temp_test)
-        unscaled_t_pred = t_pred[:, -1, 0].view(-1, 1)  # select the 1-D output and reshape from (batch_size, sequence_length) to (batch_size*sequence_length, 1)
-        t_pred = price_scaler.inverse_transform(unscaled_t_pred) # only price need to be rescaled, trend does not
-        t_plot = np.empty_like(price) * np.nan
-        t_plot[len(y_pred)+len(val_pred)+lookback:] = t_pred.flatten()
+        t_pred = model(temp_test)        
 
         if not trend: 
+            t_pred = price_scaler.inverse_transform(unscaled_t_pred) # only price need to be rescaled, trend does not
+            t_plot = np.empty_like(price) * np.nan
+            t_plot[len(y_pred)+len(val_pred)+lookback:] = t_pred.flatten()
+
             plt.figure(figsize=(10,2))
             plt.plot(price, c='b')
             plt.plot(train_plot, c='r')
@@ -99,6 +99,8 @@ def main(trend, baseline=False):
             plt.show()
 
         else:
+            unscaled_t_pred = t_pred[:, -1, 0].view(-1, 1)  # select the 1-D output and reshape from (batch_size, sequence_length) to (batch_size*sequence_length, 1)
+
             # Calculate true positive and false positive rates
             y_true = test_label[:,0,0].view(-1, 1)
             y_score = unscaled_t_pred
@@ -125,4 +127,4 @@ if __name__ == '__main__':
     if sys.argv[1].lower() not in ['true', 'false']:
         raise ValueError('Invalid input: please use True or False')
     trend = sys.argv[1].lower() == 'true'
-    main(trend, baseline=True)
+    main(trend, baseline=False)
