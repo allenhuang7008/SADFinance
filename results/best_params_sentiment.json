@@ -1,1 +1,1 @@
-{"lookback": 15, "lr": 0.001049933834918411, "n_nodes": 10, "n_layers": 4, "dropout_rate": 0.3091721978717311}
+{"lookback": 40, "lr": 0.0004670068331054563, "n_nodes": 10, "n_layers": 2, "dropout_rate": 0.3608318648167502}

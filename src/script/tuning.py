@@ -6,8 +6,8 @@ def objective(trial, norm_train, norm_val, trend):
     params = {
         'lookback' : trial.suggest_int("lookback", 5, 60, step=5),
         'lr' : trial.suggest_float("lr", 1e-5, 1e-1, log=True),
-        'n_nodes' : trial.suggest_int("n_nodes", 10, 200, step=10),
-        'n_layers' : trial.suggest_int("n_layers", 1, 5),
+        'n_nodes' : trial.suggest_int("n_nodes", 10, 100, step=10),
+        'n_layers' : trial.suggest_int("n_layers", 1, 3),
         'dropout_rate' : trial.suggest_float("dropout_rate", 0.2, 0.5)
     }
 
@@ -23,8 +23,8 @@ def study_early_stop(study, trial):
     if len(study.trials) < N:
         return
 
-    best_value = study.best_value
     values = [t.value for t in study.trials[-N:]]
+    best_value = min(values)
     if all((abs(v - best_value) < threshold) or (v > best_value) for v in values):
         study.stop()
 

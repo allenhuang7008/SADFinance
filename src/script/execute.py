@@ -127,4 +127,4 @@ if __name__ == '__main__':
     if sys.argv[1].lower() not in ['true', 'false']:
         raise ValueError('Invalid input: please use True or False')
     trend = sys.argv[1].lower() == 'true'
-    main(trend, baseline=False)
+    main(trend, baseline=True)
