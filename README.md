@@ -12,7 +12,7 @@ To conduct our analysis, we collected the following key data:
 3. Wall Street Journal News Data: We obtained valuable news data from the Wall Street Journal through ProQuest TDM Studio. This news data covers the same time period as our stock data and is instrumental in conducting sentiment analysis.
 
 # Sentiment Analysis 
-A critical component of our project is the sentiment analysis of the news data. We employed natural language processing techniques to analyze and extract emotion encodings from the Wall Street Journal articles. Emotion encodings derived are "love, anger, disgust, fear, happiness, sadness, surprise, neutral, other". The sentiment analysis process enabled us to capture the sentiment and emotional context embedded in the news articles related to specific stocks. The detailed process is as follows.
+A critical component of our project is the sentiment analysis of the news data. We employed natural language processing techniques to analyze and extract emotion encodings from the Wall Street Journal articles. Emotion encodings derived are "love, anger, disgust, fear, happiness, sadness, surprise, neutral, other". The sentiment analysis process enabled us to capture the sentiment and emotional context embedded in the news articles related to specific stocks.
 
 # LSTM Model for Stock Price Prediction
 For stock price prediction, we employed a powerful Long Short-Term Memory (LSTM) model, a type of recurrent neural network (RNN). LSTM models are well-suited for handling sequential data, making them ideal for time series forecasting tasks. By training the LSTM model on historical stock price patterns, we sought to predict whether the stock price would go up or down.
