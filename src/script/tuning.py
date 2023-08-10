@@ -58,7 +58,7 @@ def tune_model(norm_train, norm_val, trend, baseline=False):
     if baseline:
         slice.write_image('../../results/param_slice_baseline.png')
     else:
-        slice.write_image('../../results/param_slice.png')
+        slice.write_image('../../results/param_slice_sentiment.png')
 
 
     return best_params, best_val_loss
